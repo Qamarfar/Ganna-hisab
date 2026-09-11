@@ -1,15 +1,71 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/bg">
-<LinearLayout android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layoutDirection="rtl">
-<TextView android:text="گنا حساب" android:textSize="30sp" android:textStyle="bold" android:textColor="@color/green" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="12dp"/>
-<TextView android:text="گنا خرید • ٹرالا • کسان کھاتہ • مل • خرچہ • منافع" android:textSize="15sp" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingBottom="10dp"/>
-<TextView android:id="@+id/summary" android:textSize="17sp" android:padding="16dp" android:background="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/buy" android:text="🌾 گنا خریداری درج کریں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/trip" android:text="🚛 نیا ٹرالا درج کریں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/payment" android:text="💰 کسان/پارٹی کو پیمنٹ" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/receipt" android:text="🏭 مل سے وصولی درج کریں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/expense" android:text="⛽ عام خرچہ درج کریں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/ledger" android:text="👨‍🌾 کسان کا کھاتہ دیکھیں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/report" android:text="📊 مکمل رپورٹ" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/exportCsv" android:text="📗 Excel/CSV رپورٹ بنائیں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/pdf" android:text="📄 PDF رپورٹ بنائیں" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-</LinearLayout></ScrollView>
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ganna Hisab"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btnTrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Naya Load / Trip Add Karein" />
+
+        <Button
+            android:id="@+id/btnHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Sara Record Dekhein" />
+
+        <Button
+            android:id="@+id/btnExpense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Kharcha Add Karein" />
+
+        <Button
+            android:id="@+id/btnPayment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Payment Add Karein" />
+
+        <Button
+            android:id="@+id/btnReceipt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Mill Receipt Add Karein" />
+
+        <Button
+            android:id="@+id/btnPurchase"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Purchase Add Karein" />
+
+        <Button
+            android:id="@+id/btnExportCsv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Report Export (CSV)" />
+
+    </LinearLayout>
+</ScrollView>
