@@ -1,71 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:paddingBottom="24dp">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ganna Hisab"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp" />
-
-        <Button
-            android:id="@+id/btnTrip"
+        <!-- Header -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Naya Load / Trip Add Karein" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/bg_header"
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
 
-        <Button
-            android:id="@+id/btnHistory"
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_launcher_flat"
+                android:contentDescription="Ganna Hisab" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="گنا حساب"
+                android:textColor="@color/white"
+                android:textSize="26sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Ganna Business Manager"
+                android:textColor="#D9EAD9"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Sara Record Dekhein" />
+            android:orientation="vertical"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:paddingTop="20dp">
 
-        <Button
-            android:id="@+id/btnExpense"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Kharcha Add Karein" />
+            <!-- Customer section -->
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Customer" />
+            <LinearLayout style="@style/CardSection">
+                <Button
+                    android:id="@+id/btnCustomer"
+                    style="@style/AppButton"
+                    android:text="Customer Ganna Entry Add Karein" />
+                <Button
+                    android:id="@+id/btnCustomerHistory"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="0dp"
+                    android:text="Customer Sheets Dekhein" />
+            </LinearLayout>
 
-        <Button
-            android:id="@+id/btnPayment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Payment Add Karein" />
+            <!-- Trolley and Mill section -->
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Trolley aur Mill" />
+            <LinearLayout style="@style/CardSection">
+                <Button
+                    android:id="@+id/btnTrip"
+                    style="@style/AppButton"
+                    android:text="Naya Load / Trip Add Karein" />
+                <Button
+                    android:id="@+id/btnTrolleyHistory"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:text="Trolley Sheets Dekhein" />
+                <Button
+                    android:id="@+id/btnMillSummary"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="0dp"
+                    android:text="Mill Hisab Dekhein" />
+            </LinearLayout>
 
-        <Button
-            android:id="@+id/btnReceipt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Mill Receipt Add Karein" />
+            <!-- Kharcha / ledger section -->
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Kharcha aur Ledger" />
+            <LinearLayout style="@style/CardSection">
+                <Button
+                    android:id="@+id/btnExpense"
+                    style="@style/AppButton"
+                    android:text="Kharcha Add Karein" />
+                <Button
+                    android:id="@+id/btnPayment"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:text="Payment Add Karein" />
+                <Button
+                    android:id="@+id/btnReceipt"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:text="Mill Receipt Add Karein" />
+                <Button
+                    android:id="@+id/btnPurchase"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:text="Purchase Add Karein" />
+                <Button
+                    android:id="@+id/btnHistory"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="0dp"
+                    android:text="Sara Record Dekhein" />
+            </LinearLayout>
 
-        <Button
-            android:id="@+id/btnPurchase"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Purchase Add Karein" />
+            <!-- Reports section -->
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Reports" />
+            <LinearLayout style="@style/CardSection">
+                <Button
+                    android:id="@+id/btnDashboard"
+                    style="@style/AppButtonAccent"
+                    android:text="Profit Dashboard (6 Mahine)" />
+                <Button
+                    android:id="@+id/btnExportCsv"
+                    style="@style/AppButton"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="0dp"
+                    android:text="Report Export (CSV)" />
+            </LinearLayout>
 
-        <Button
-            android:id="@+id/btnExportCsv"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="Report Export (CSV)" />
-
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
