@@ -42,7 +42,12 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         db = new DB(this);
 
+        findViewById(R.id.btnCustomer).setOnClickListener(v -> showCustomerDialog());
+        findViewById(R.id.btnCustomerHistory).setOnClickListener(v -> showCustomerHistoryDialog());
         findViewById(R.id.btnTrip).setOnClickListener(v -> showTripDialog());
+        findViewById(R.id.btnTrolleyHistory).setOnClickListener(v -> showTrolleyHistoryDialog());
+        findViewById(R.id.btnMillSummary).setOnClickListener(v -> showMillSummaryDialog());
+        findViewById(R.id.btnDashboard).setOnClickListener(v -> showDashboardDialog());
         findViewById(R.id.btnHistory).setOnClickListener(v -> showHistoryDialog());
         findViewById(R.id.btnExpense).setOnClickListener(v -> showExpenseDialog());
         findViewById(R.id.btnPayment).setOnClickListener(v -> showPaymentDialog());
@@ -174,37 +179,109 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------------
-    // FULL HISTORY  -> every trip ever saved, newest first, forever
-    // (until you delete the app data - nothing auto-deletes).
+    // CUSTOMER (ganna seller) ADD ENTRY -> picked from saved customer
+    // list, every save stacks a NEW row under that customer, nothing
+    // old is ever overwritten.
     // ---------------------------------------------------------------
-    private void showHistoryDialog() {
-        Cursor c = db.getAllTrips();
-        List<String> rows = new ArrayList<>();
-        double totalMaund = 0, totalCost = 0;
+    private void showCustomerDialog() {
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int pad = dp(20);
+        layout.setPadding(pad, pad, pad, pad);
 
+        TextView nameLabel = new TextView(this);
+        nameLabel.setText("Customer ka naam");
+        layout.addView(nameLabel);
+        AutoCompleteTextView nameView = new AutoCompleteTextView(this);
+        nameView.setThreshold(1);
+        nameView.setHint("Naam likhein ya list se chunein");
+        nameView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, db.getCustomerNames()));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(10);
+        nameView.setLayoutParams(lp);
+        layout.addView(nameView);
+
+        EditText grossView = newField(layout, "Gross wazan", true);
+        EditText emptyView = newField(layout, "Khali wazan", true);
+        EditText bandhanView = newField(layout, "Bandhan", true);
+        EditText rateView = newField(layout, "Rate fi man", true);
+        EditText laborView = newField(layout, "Labor (Rs)", true);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(layout);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Customer Ganna Entry")
+                .setView(scroll)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String name = nameView.getText().toString().trim();
+                    if (name.isEmpty()) {
+                        Toast.makeText(this, "Customer ka naam likhna zaroori hai", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    double gross = parseD(grossView);
+                    if (gross <= 0) {
+                        Toast.makeText(this, "Gross wazan likhna zaroori hai", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    double empty = parseD(emptyView);
+                    double bandhan = parseD(bandhanView);
+                    double rate = parseD(rateView);
+                    double labor = parseD(laborView);
+
+                    double remaining = gross - empty;
+                    double net = remaining - bandhan;
+                    double total = net * rate;
+                    double finalAmount = total - labor;
+
+                    db.addCustomerIfNotExists(name);
+                    db.insertCustomerEntry(today(), name, gross, empty, remaining, bandhan, net, rate,
+                            total, labor, finalAmount);
+
+                    Toast.makeText(this, "Entry save ho gayi", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    // ---------------------------------------------------------------
+    // CUSTOMER SHEETS -> pick a customer, see their whole running
+    // sheet with running totals of safi wazan and raqam.
+    // ---------------------------------------------------------------
+    private void showCustomerHistoryDialog() {
+        List<String> names = db.getCustomerNames();
+        if (names.isEmpty()) {
+            Toast.makeText(this, "Abhi koi customer add nahi hua", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("Customer Chunein")
+                .setItems(names.toArray(new String[0]), (dialog, which) -> showCustomerSheet(names.get(which)))
+                .setNegativeButton("Band Karein", null)
+                .show();
+    }
+
+    private void showCustomerSheet(String name) {
+        Cursor c = db.getEntriesForCustomer(name);
+        List<String> rows = new ArrayList<>();
+        double totalNet = 0, totalFinal = 0;
         while (c.moveToNext()) {
             String date = c.getString(0);
-            String mill = c.getString(1);
-            String driver = c.getString(2);
-            String phone = c.getString(3);
-            String truck = c.getString(4);
-            double maund = c.getDouble(5);
-            double driverCost = c.getDouble(6);
-            double otherCost = c.getDouble(7);
-
-            totalMaund += maund;
-            totalCost += driverCost + otherCost;
-
-            StringBuilder line = new StringBuilder();
-            line.append(date).append("  |  Mill: ").append(mill);
-            if (driver != null && !driver.isEmpty()) {
-                line.append("\nDriver: ").append(driver);
-                if (phone != null && !phone.isEmpty()) line.append(" (").append(phone).append(")");
-            }
-            if (truck != null && !truck.isEmpty()) line.append("\nTruck: ").append(truck);
-            line.append(String.format(Locale.getDefault(), "\nManu: %.2f   Kharcha: Rs %.2f",
-                    maund, (driverCost + otherCost)));
-            rows.add(line.toString());
+            double gross = c.getDouble(1);
+            double empty = c.getDouble(2);
+            double remaining = c.getDouble(3);
+            double bandhan = c.getDouble(4);
+            double net = c.getDouble(5);
+            double rate = c.getDouble(6);
+            double total = c.getDouble(7);
+            double labor = c.getDouble(8);
+            double finalAmount = c.getDouble(9);
+            totalNet += net;
+            totalFinal += finalAmount;
+            rows.add(String.format(Locale.getDefault(),
+                    "%s\nGross: %.2f   Khali: %.2f   Baqi: %.2f\nBandhan: %.2f   Safi: %.2f   Rate: %.2f\nKul: Rs %.2f   Labor: Rs %.2f   Raqam: Rs %.2f",
+                    date, gross, empty, remaining, bandhan, net, rate, total, labor, finalAmount));
         }
         c.close();
 
@@ -215,8 +292,8 @@ public class MainActivity extends Activity {
         int pad = dp(16);
         summary.setPadding(pad, pad, pad, pad);
         summary.setText(String.format(Locale.getDefault(),
-                "Total Loads: %d   |   Total Maund: %.2f   |   Total Kharcha: Rs %.2f",
-                rows.size(), totalMaund, totalCost));
+                "%s\nTotal Safi Wazan: %.2f   |   Total Raqam: Rs %.2f",
+                name, totalNet, totalFinal));
         container.addView(summary);
 
         ListView listView = new ListView(this);
@@ -225,172 +302,137 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(500)));
 
         new AlertDialog.Builder(this)
-                .setTitle("Sara Record")
+                .setTitle(name + " ki Sheet")
                 .setView(container)
                 .setPositiveButton("Band Karein", null)
                 .show();
     }
 
     // ---------------------------------------------------------------
-    // Simple add-record dialogs for expenses / payments / receipts / purchases
+    // TROLLEY SHEETS -> pick a trolley/truck number, see its whole
+    // running sheet (every load it carried) with running totals.
     // ---------------------------------------------------------------
-    private void showExpenseDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(20);
-        layout.setPadding(pad, pad, pad, pad);
-        EditText title = newField(layout, "Kharche ka naam", false);
-        EditText amount = newField(layout, "Amount (Rs)", true);
-
+    private void showTrolleyHistoryDialog() {
+        List<String> trucks = db.getTruckNumbers();
+        if (trucks.isEmpty()) {
+            Toast.makeText(this, "Abhi koi trolley record nahi hai", Toast.LENGTH_SHORT).show();
+            return;
+        }
         new AlertDialog.Builder(this)
-                .setTitle("Kharcha Add Karein")
-                .setView(layout)
-                .setPositiveButton("Save", (d, w) -> {
-                    ContentValues cv = new ContentValues();
-                    cv.put("date", today());
-                    cv.put("title", title.getText().toString().trim());
-                    cv.put("amount", parseD(amount));
-                    db.getWritableDatabase().insert("expenses", null, cv);
-                    Toast.makeText(this, "Kharcha save ho gaya", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
+                .setTitle("Trolley Chunein")
+                .setItems(trucks.toArray(new String[0]), (dialog, which) -> showTrolleySheet(trucks.get(which)))
+                .setNegativeButton("Band Karein", null)
                 .show();
     }
 
-    private void showPaymentDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(20);
-        layout.setPadding(pad, pad, pad, pad);
-        EditText person = newField(layout, "Kis ko payment (naam)", false);
-        EditText amount = newField(layout, "Amount (Rs)", true);
-        EditText note = newField(layout, "Note (optional)", false);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Payment Add Karein")
-                .setView(layout)
-                .setPositiveButton("Save", (d, w) -> {
-                    ContentValues cv = new ContentValues();
-                    cv.put("date", today());
-                    cv.put("person", person.getText().toString().trim());
-                    cv.put("amount", parseD(amount));
-                    cv.put("note", note.getText().toString().trim());
-                    db.getWritableDatabase().insert("payments", null, cv);
-                    Toast.makeText(this, "Payment save ho gaya", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void showReceiptDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(20);
-        layout.setPadding(pad, pad, pad, pad);
-        AutoCompleteTextView millView = new AutoCompleteTextView(this);
-        millView.setHint("Mill ka naam");
-        millView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, db.getMillNames()));
-        layout.addView(millView);
-        EditText amount = newField(layout, "Amount (Rs)", true);
-        EditText note = newField(layout, "Note (optional)", false);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Mill Receipt Add Karein")
-                .setView(layout)
-                .setPositiveButton("Save", (d, w) -> {
-                    String mill = millView.getText().toString().trim();
-                    db.addMillIfNotExists(mill);
-                    ContentValues cv = new ContentValues();
-                    cv.put("date", today());
-                    cv.put("mill", mill);
-                    cv.put("amount", parseD(amount));
-                    cv.put("note", note.getText().toString().trim());
-                    db.getWritableDatabase().insert("receipts", null, cv);
-                    Toast.makeText(this, "Receipt save ho gaya", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    private void showPurchaseDialog() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        int pad = dp(20);
-        layout.setPadding(pad, pad, pad, pad);
-        EditText seller = newField(layout, "Bechne wale ka naam", false);
-        EditText maund = newField(layout, "Maund", true);
-        EditText rate = newField(layout, "Rate", true);
-        EditText paid = newField(layout, "Kitna paid kiya (Rs)", true);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Purchase Add Karein")
-                .setView(layout)
-                .setPositiveButton("Save", (d, w) -> {
-                    double m = parseD(maund);
-                    double r = parseD(rate);
-                    double total = m * r;
-                    ContentValues cv = new ContentValues();
-                    cv.put("date", today());
-                    cv.put("seller", seller.getText().toString().trim());
-                    cv.put("maund", m);
-                    cv.put("rate", r);
-                    cv.put("total", total);
-                    cv.put("paid", parseD(paid));
-                    db.getWritableDatabase().insert("purchases", null, cv);
-                    Toast.makeText(this, "Purchase save ho gaya", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    // ---------------------------------------------------------------
-    // Export every saved trip to a CSV file in Downloads.
-    // ---------------------------------------------------------------
-    private void exportCsv() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Date,Mill,Driver,DriverPhone,Truck,Maund,DriverCost,OtherCost,SaleRate,SaleTotal,Status\n");
-        Cursor c = db.getAllTrips();
+    private void showTrolleySheet(String truck) {
+        Cursor c = db.getTripsForTruck(truck);
+        List<String> rows = new ArrayList<>();
+        double totalMaund = 0, totalCost = 0;
         while (c.moveToNext()) {
-            for (int i = 0; i < c.getColumnCount(); i++) {
-                sb.append(csvEscape(c.getString(i)));
-                sb.append(i == c.getColumnCount() - 1 ? "\n" : ",");
-            }
+            String date = c.getString(0);
+            String mill = c.getString(1);
+            String driver = c.getString(2);
+            String phone = c.getString(3);
+            double maund = c.getDouble(5);
+            double driverCost = c.getDouble(6);
+            double otherCost = c.getDouble(7);
+            totalMaund += maund;
+            totalCost += driverCost + otherCost;
+            rows.add(String.format(Locale.getDefault(),
+                    "%s\nMill: %s\nDriver: %s (%s)\nWazan: %.2f   Kharcha: Rs %.2f",
+                    date, mill, driver == null ? "" : driver, phone == null ? "" : phone,
+                    maund, driverCost + otherCost));
         }
         c.close();
 
-        String fileName = "GannaHisab_" + System.currentTimeMillis() + ".csv";
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentResolver resolver = getContentResolver();
-                ContentValues cv = new ContentValues();
-                cv.put(MediaStore.Downloads.DISPLAY_NAME, fileName);
-                cv.put(MediaStore.Downloads.MIME_TYPE, "text/csv");
-                Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
-                if (uri != null) {
-                    try (OutputStream out = resolver.openOutputStream(uri)) {
-                        out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-                    }
-                    Toast.makeText(this, "CSV Downloads mein save ho gayi: " + fileName, Toast.LENGTH_LONG).show();
-                    return;
-                }
-            }
-            // fallback for older Android versions
-            java.io.File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            java.io.File file = new java.io.File(dir, fileName);
-            try (java.io.FileOutputStream out = new java.io.FileOutputStream(file)) {
-                out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
-            }
-            Toast.makeText(this, "CSV Downloads mein save ho gayi: " + fileName, Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Export nahi ho saka: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+
+        TextView summary = new TextView(this);
+        int pad = dp(16);
+        summary.setPadding(pad, pad, pad, pad);
+        summary.setText(String.format(Locale.getDefault(),
+                "Trolley: %s\nTotal Wazan: %.2f   |   Total Kharcha: Rs %.2f",
+                truck, totalMaund, totalCost));
+        container.addView(summary);
+
+        ListView listView = new ListView(this);
+        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, rows));
+        container.addView(listView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(500)));
+
+        new AlertDialog.Builder(this)
+                .setTitle(truck + " ki Sheet")
+                .setView(container)
+                .setPositiveButton("Band Karein", null)
+                .show();
     }
 
-    private String csvEscape(String s) {
-        if (s == null) return "";
-        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
-            return "\"" + s.replace("\"", "\"\"") + "\"";
+    // ---------------------------------------------------------------
+    // MILL HISAB -> every mill, how many trolleys and how much wazan
+    // went to it, and which trucks carried it.
+    // ---------------------------------------------------------------
+    private void showMillSummaryDialog() {
+        List<String> mills = db.getMillNames();
+        if (mills.isEmpty()) {
+            Toast.makeText(this, "Abhi koi mill record nahi hai", Toast.LENGTH_SHORT).show();
+            return;
         }
-        return s;
+        List<String> rows = new ArrayList<>();
+        for (String mill : mills) {
+            double[] totals = db.getMillTotals(mill);
+            List<String> trucks = db.getTrucksForMill(mill);
+            rows.add(String.format(Locale.getDefault(),
+                    "%s\nTrolleys: %d   |   Total Wazan: %.2f\nTrucks: %s",
+                    mill, (int) totals[0], totals[1],
+                    trucks.isEmpty() ? "-" : android.text.TextUtils.join(", ", trucks)));
+        }
+
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        ListView listView = new ListView(this);
+        listView.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, rows));
+        container.addView(listView, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(500)));
+
+        new AlertDialog.Builder(this)
+                .setTitle("Mill Hisab")
+                .setView(container)
+                .setPositiveButton("Band Karein", null)
+                .show();
     }
-}
+
+    // ---------------------------------------------------------------
+    // DASHBOARD -> total paid out, kharcha, aur munafa, pichle
+    // 6 mahine ka.
+    // ---------------------------------------------------------------
+    private void showDashboardDialog() {
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.MONTH, -6);
+        String since = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(cal.getTime());
+
+        double customerPaid = db.sumSince("customer_entries", "finalAmount", since);
+        double tripCosts = db.sumTripCostsSince(since);
+        double tripSales = db.sumSince("trips", "saleTotal", since);
+        double otherExpenses = db.sumSince("expenses", "amount", since);
+        double millReceipts = db.sumSince("receipts", "amount", since);
+
+        double totalIncome = tripSales + millReceipts;
+        double totalOutgoing = customerPaid + tripCosts + otherExpenses;
+        double profit = totalIncome - totalOutgoing;
+
+        String msg = String.format(Locale.getDefault(),
+                "Pichle 6 Mahine ka Hisab\n\n" +
+                        "Customers ko Diye Gaye: Rs %.2f\n" +
+                        "Trolley Kharcha: Rs %.2f\n" +
+                        "Doosre Kharche: Rs %.2f\n" +
+                        "-----------------------------\n" +
+                        "Kul Kharcha: Rs %.2f\n\n" +
+                        "Mill Se Aamdani: Rs %.2f\n" +
+                        "Trip Sale: Rs %.2f\n" +
+                        "-----------------------------\n" +
+                        "Kul Aamdani: Rs %.2f\n\n" +
+                        "Munafa: Rs %.2f",
+                customerPaid, tripCosts, otherExpenses, totalOutgoing,
+        
